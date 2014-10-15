@@ -21,7 +21,7 @@ The unit of data that passes through the workflow is called a *task* when it is 
 .. image:: taskresult1.png
    :align: center
 
-Most often a data object is both, depending on the context -- whether it's viewed as the output of an upstream producer, or input to the downstream consumer. It can be any pickleable Python object: a standard Python data type like string or list, or a user-defined object. The only requirement is that it is picklable.
+Most often a data object is both, depending on the context -- whether it's viewed as the output of an upstream producer, or input to the downstream consumer. It can be any Python object that can be dumped and read by the json.dump and json.reads methods: a standard Python data type like string or list, or a user-defined object. The only requirement is that it can be converted to json by the standard Python library.
 
 Worker
 ------
@@ -63,15 +63,7 @@ Input tasks are fed into the most-upstream stage. Pipeline results, if any, are 
 Ordered vs. unordered stages
 ----------------------------
 
-A worker within a stage can operate in two different ways in relation to other workers: it can be arranged in a specific *order* with respect to its siblings, or unordered, functioning independently of other workers in the stage.
-
-An **ordered stage** preserves a sequence among its workers, each worker having a *previous* and *next* neighbor worker, all workers thusly arranged in a circular fashion. It guarantees that inputs will be processed in this sequence, the *previous* worker operating on the previous task, and likewise the *next* one working on the task immediately after. Just as stage inputs are processed in order, stage outputs become available in the same sequence: the *previous* worker's result showing up before the current worker's, and the *next* one's result after. In case a worker completes processing ahead of its previous neighbor, it waits for it, adding the result to stage output right after its predecessor. In other words, *order of stage output results matches that of its input tasks.* 
-
-An **unordered stage** adheres to no such symmetry among its worker processes. Each worker starts processing the earliest available task, and as soon as it's done, makes the result available as stage output.
-
-Choosing between the two depends on the nature of problem. Many signal processing applications require preserved order of inputs and outputs. On the other hand, certain file system tasks -- like source code compiling -- may safely ignore input/output sequences. And, naturally, if your stage operates just a single worker, it doesn't matter which type you use: the output sequence will be ordered.
-
-.. Performance may vary between the two types. In an ordered stage, a worker may still be processing a task while its *next* neighbor has already completed its own (downstream, i.e. "future") task. The *next* worker will have to wait idly, unable to process any new incoming task. This effect -- due to the dependency relationship of neighboring workers in an *unordered* stage -- is not an issue when using with *unordered* stage. 
+This implementation considers all workers in a stage to be unordered, that is there is no synchronization between the workers in a given stage.
 
 .. _multiprocessing:
 
